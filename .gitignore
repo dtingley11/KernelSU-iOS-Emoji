@@ -1,0 +1,10 @@
+# Ignore compiled binaries
+*.exe
+*.o
+
+# Ignore macOS system files
+.DS_Store
+
+# Ignore files in the "build" directory
+/build/
+
