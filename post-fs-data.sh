@@ -23,6 +23,7 @@ fi
 MODDIR="${0%/*}"
 FONT_FILE="$MODDIR/system/fonts/NotoColorEmoji.ttf"
 SYSTEM_FONT_FILE="/system/fonts/NotoColorEmoji.ttf"
+FACEBOOK_FONT_FILE="$MODDIR/system/fonts/FacebookEmoji.ttf"
 
 # Mount overlay to replace system emoji font
 mount -o bind "$FONT_FILE" "$SYSTEM_FONT_FILE"
@@ -30,4 +31,10 @@ mount -o bind "$FONT_FILE" "$SYSTEM_FONT_FILE"
 # Ensure correct permissions for the replacement file
 chmod 644 "$SYSTEM_FONT_FILE"
 
-# Additional setup or configurations as needed
+# Mount FacebookEmoji.ttf to specified directories
+mount -o bind "$FACEBOOK_FONT_FILE" "/data/data/com.facebook.orca/app_ras_blobs/FacebookEmoji.ttf"
+mount -o bind "$FACEBOOK_FONT_FILE" "/data/data/com.facebook.katana/app_ras_blobs/FacebookEmoji.ttf"
+
+# Ensure correct permissions for the mounted files
+chmod 644 "/data/data/com.facebook.orca/app_ras_blobs/FacebookEmoji.ttf"
+chmod 644 "/data/data/com.facebook.katana/app_ras_blobs/FacebookEmoji.ttf"
