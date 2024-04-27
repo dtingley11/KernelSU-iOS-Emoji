@@ -1,7 +1,11 @@
-# Magisk-iOS-Emoji
-Systemlessly replaces emoji font with iOS Emoji, for use with KernelSU. Compatability is not guaranteed. 
+# KernelSU-iOS-Emoji
+Systemlessly replaces emoji font with iOS Emoji. For use with KernelSU. Compatability is not guaranteed. If your apps are not loading the correct font, clear the app's cache and open the app again. You may have to close your app and reopen after reboots. 
 
 ## Changelog
+
+v1.1
+-added generic facebook/instagram/messenger support
+
 v1.0
 -support for KSU
 
