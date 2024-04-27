@@ -28,5 +28,5 @@ Pixel 6 (A14)
 
 [Kenta15](https://github.com/Keinta15) - For creating the orignal module
 
-[bugreportion](https://github.com/bugreportion) - For creating a fork of the original. The changes they made let me understand what I needed to do to add raw compatability for KernelSU
+[bugreportion](https://github.com/bugreportion) - For creating a fork of the original. The changes they made let me understand what I needed to do to add basic compatability for KernelSU
 
