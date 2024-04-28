@@ -16,7 +16,7 @@ v1.0
 [17.4 new emojis](https://blog.emojipedia.org/ios-17-4-emoji-changelog/)
 
 ## Troubleshooting 
-If your apps are not loading the correct font, clear the app's cache and open the app again. You may have to close your app and reopen after reboots. 
+If your apps are not loading the correct font, clear the app's cache and close/reopen the app again. You may have to close your app and reopen after reboots. 
 
 If it doesn't work delete all files under /data/font/files/(Random folder name) 
 
