@@ -29,7 +29,9 @@ If it works for you, please let me know by sending a dm on reddit (u/dtingley112
 ## Credits:
 [topjohnwu](https://github.com/topjohnwu) - For creating magisk
 
-[tiann](https://github.com/tiann) - For creating KernelSU
+[zx2c4](https://forum.xda-developers.com/member.php?u=5434776) - For creating the original KernelSU idea
+
+[tiann](https://github.com/tiann) - For expanding on KernelSU
 
 [Kenta15](https://github.com/Keinta15) - For creating the original module
 
