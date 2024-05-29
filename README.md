@@ -1,4 +1,4 @@
-so# KernelSU-iOS-Emoji
+# KernelSU-iOS-Emoji
 Systemlessly replaces emoji font with iOS Emoji. For use with KernelSU. Compatability is not guaranteed. 
 
 ## Changelog
