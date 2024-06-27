@@ -23,6 +23,8 @@ If it doesn't work delete all files under /data/font/files/(Random folder name)
 ## Tested on
 Pixel 6 (A14)
 
+Pixel 7 Pro (A14)
+
 Redmi Note 10 Pro, Project Elixir 4.1 (A14)
 
 If it works for you, please let me know by sending a dm on reddit (u/dtingley11222) with the model of your device as well as the android version it is running.
