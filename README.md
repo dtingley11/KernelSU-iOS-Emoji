@@ -3,6 +3,9 @@ Systemlessly replaces emoji font with iOS Emoji. For use with KernelSU. Compatab
 
 ## Changelog
 
+v3.0
+-rewrite of how emojis are replaced, improved bypassing of root detection mechanisms
+
 v2.0
 -cleaned up code, added facebook/messenger package detection
 
