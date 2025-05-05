@@ -4,7 +4,7 @@ Systemlessly replaces emoji font with iOS Emoji. For use with KernelSU. Compatab
 ## Changelog
 
 v3.0
--rewrite of how emojis are replaced, improved bypassing of root detection mechanisms
+-added support for 18.4 emojis
 
 v2.0
 -cleaned up code, added facebook/messenger package detection
@@ -16,7 +16,7 @@ v1.0
 -support for KSU
 
 ## Changelog for emojis
-[17.4 new emojis](https://blog.emojipedia.org/ios-17-4-emoji-changelog/)
+[17.4 new emojis](https://blog.emojipedia.org/apple-ios-18-4-emoji-changelog/)
 
 ## Troubleshooting 
 If your apps are not loading the correct font, clear the app's cache and close/reopen the app again. You may have to close your app and reopen after reboots. 
