@@ -25,9 +25,9 @@
 
 # NOTE: This part has to be adjusted to fit your own needs
 
-# This will be the folder name under /magisk
+# This will be the folder name under /data/adb/modules
 # This should also be the same as the id in your module.prop to prevent confusion
-MODID=template
+MODID=iOS_Emoji_KSU
 
 # Set to true if you need to enable Magic Mount
 # Most mods would like it to be enabled
@@ -37,10 +37,10 @@ AUTOMOUNT=true
 PROPFILE=false
 
 # Set to true if you need post-fs-data script
-POSTFSDATA=false
+POSTFSDATA=true
 
 # Set to true if you need late_start service script
-LATESTARTSERVICE=false
+LATESTARTSERVICE=true
 
 ##########################################################################################
 # Installation Message

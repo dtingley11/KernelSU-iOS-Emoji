@@ -1,5 +1,5 @@
 # KernelSU-iOS-Emoji
-Systemlessly replaces emoji font with iOS Emoji. For use with KernelSU. Compatability is not guaranteed. 
+Systemlessly replaces emoji font with iOS 26.4 Emoji for KernelSU and overlayfs setups. It ships one font source at `system/fonts/NotoColorEmoji.ttf` and binds it into app-specific paths at boot. Compatability is not guaranteed. 
 
 ## Changelog
 
@@ -19,7 +19,7 @@ v1.0
 [18.4 new emojis](https://blog.emojipedia.org/apple-ios-18-4-emoji-changelog/)
 
 ## Troubleshooting 
-If your apps are not loading the correct font, clear the app's cache and close/reopen the app again. You may have to close your app and reopen after reboots. 
+If your apps are not loading the correct font, clear the app's cache and close/reopen the app again. This module now handles most of that automatically at boot, but some apps may still need a restart after reboots. 
 
 If it doesn't work delete all files under /data/font/files/(Random folder name) 
 
@@ -47,4 +47,3 @@ If it works for you, please let me know by sending a dm on reddit (u/dtingley112
 [Kenta15](https://github.com/Keinta15) - For creating the original module
 
 [bugreportion](https://github.com/bugreportion) - For creating a fork of the original. The changes they made helped me understand what I needed to do to add basic compatability for KernelSU
-

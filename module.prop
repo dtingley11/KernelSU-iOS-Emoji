@@ -1,7 +1,7 @@
 id=iOS_Emoji_KSU
-name=17.4 iOS Emoji font
-version=3.0
-versionCode=200
+name=iOS 26.4 Emoji font
+version=v26.4
+versionCode=26400
 author=dtingley11
 description=iOS Emojis for KernelSU!
 minMagisk=20200
