@@ -3,6 +3,11 @@ Systemlessly replaces emoji font with iOS 26.4 Emoji for KernelSU and overlayfs 
 
 ## Changelog
 
+v4.0
+- Switched KernelSU packaging to a single `system/fonts/NotoColorEmoji.ttf` source
+- Updated boot scripts to bind the 26.4 font system-wide and into app-specific emoji paths
+- Removed the extra shipped Facebook emoji copy
+
 v3.0
 -added support for 18.4 emojis
 
