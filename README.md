@@ -21,7 +21,7 @@ v1.0
 -support for KSU
 
 ## Changelog for emojis
-[18.4 new emojis](https://blog.emojipedia.org/apple-ios-18-4-emoji-changelog/)
+[26.4 new emojis](https://blog.emojipedia.org/apple-ios-26-4-emoji-changelog/)
 
 ## Troubleshooting 
 If your apps are not loading the correct font, clear the app's cache and close/reopen the app again. This module now handles most of that automatically at boot, but some apps may still need a restart after reboots. 
