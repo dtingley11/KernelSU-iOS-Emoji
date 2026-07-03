@@ -43,6 +43,8 @@ POCO X6 5G, LunarisAOSP 3.6 (A16)
 
 Redmi Note 12 4g, PixelOS (A15)
 
+Redmi Note 10s (A13)
+
 
 If it works for you, please let me know by sending a dm on reddit (u/dtingley11222) with the model of your device as well as the android version it is running.
 
