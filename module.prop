@@ -1,7 +1,7 @@
 id=iOS_Emoji_KSU
 name=iOS 26.4 Emoji font TEST BUILD
-version=v4.1-test1
+version=v4.1
 versionCode=411
 author=dtingley11
-description=TEST BUILD: iOS Emojis for KernelSU with Gecko browser/private-tab fixes.
+description=TEST BUILD: iOS Emojis for KernelSU!
 minMagisk=20200
