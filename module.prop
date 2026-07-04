@@ -3,5 +3,5 @@ name=iOS 26.4
 version=v4.1
 versionCode=411
 author=dtingley11
-description=TEST BUILD: iOS Emojis for KernelSU!
+description=iOS Emojis for KernelSU!
 minMagisk=20200
