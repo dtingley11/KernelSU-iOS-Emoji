@@ -1,6 +1,7 @@
 MODDIR=${0%/*}
 FONT_FILE="$MODDIR/system/fonts/NotoColorEmoji.ttf"
 FACEBOOK_APPS="com.facebook.orca com.facebook.katana com.facebook.lite com.facebook.mlite"
+GECKO_APPS="org.mozilla.firefox org.mozilla.firefox_beta org.mozilla.fenix org.mozilla.fennec_fdroid org.mozilla.focus org.mozilla.klar org.mozilla.rocket org.torproject.torbrowser org.mozilla.iceraven io.github.forkmaintainers.iceraven"
 GMS_FONT_PROVIDER="com.google.android.gms/com.google.android.gms.fonts.provider.FontsProvider"
 GMS_FONT_UPDATER="com.google.android.gms/com.google.android.gms.fonts.update.UpdateSchedulerService"
 ORCA_FONT_DIR1="/data/data/com.facebook.orca/files/fonts"
@@ -40,6 +41,15 @@ display_name() {
         com.facebook.lite) echo "Facebook Lite" ;;
         com.facebook.mlite) echo "Messenger Lite" ;;
         com.google.android.inputmethod.latin) echo "Gboard" ;;
+        org.mozilla.firefox) echo "Firefox" ;;
+        org.mozilla.firefox_beta) echo "Firefox Beta" ;;
+        org.mozilla.fenix) echo "Firefox Nightly" ;;
+        org.mozilla.fennec_fdroid) echo "Fennec F-Droid" ;;
+        org.mozilla.focus) echo "Firefox Focus" ;;
+        org.mozilla.klar) echo "Firefox Klar" ;;
+        org.mozilla.rocket) echo "Firefox Lite" ;;
+        org.torproject.torbrowser) echo "Tor Browser" ;;
+        org.mozilla.iceraven|io.github.forkmaintainers.iceraven) echo "Iceraven" ;;
         *) echo "$1" ;;
     esac
 }
@@ -82,6 +92,38 @@ clear_cache() {
     am force-stop "$app" >/dev/null 2>&1
 }
 
+clear_gecko_cache() {
+    app="$1"
+
+    package_installed "$app" || return 0
+
+    for base in "/data/data/$app" "/data/user/0/$app"; do
+        [ -d "$base" ] || continue
+
+        for subpath in \
+            /cache \
+            /code_cache \
+            /files/mozilla/*/cache2 \
+            /files/mozilla/*/startupCache \
+            /files/mozilla/*/shader-cache \
+            /files/mozilla/*/OfflineCache \
+            /files/mozilla/*/cache \
+            /files/mozilla/*/fontlist* \
+            /files/mozilla/*/minidumps
+        do
+            for target in "$base"$subpath; do
+                [ -e "$target" ] && rm -rf "$target"
+            done
+        done
+
+        find "$base" -type f -iname '*emoji*.ttf' 2>/dev/null | while read -r font; do
+            bind_font "$FONT_FILE" "$font"
+        done
+    done
+
+    am force-stop "$app" >/dev/null 2>&1
+}
+
 block_messenger_downloads() {
     for dir in "$ORCA_FONT_DIR1" "$ORCA_FONT_DIR2"; do
         [ -d "$dir" ] && rm -rf "$dir"/*
@@ -115,6 +157,11 @@ replace_emoji_fonts
 for app in $FACEBOOK_APPS; do
     package_installed "$app" || continue
     clear_cache "$app"
+done
+
+for app in $GECKO_APPS; do
+    package_installed "$app" || continue
+    clear_gecko_cache "$app"
 done
 
 clear_cache com.google.android.inputmethod.latin
