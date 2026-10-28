@@ -16,6 +16,7 @@ import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
 public final class DiscordEmoji implements IXposedHookLoadPackage, IXposedHookZygoteInit {
     private static String modulePath;
+    private static boolean installed;
     private static final AtomicInteger logged = new AtomicInteger();
 
     @Override
@@ -25,7 +26,9 @@ public final class DiscordEmoji implements IXposedHookLoadPackage, IXposedHookZy
 
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam param) {
-        if (!"com.discord".equals(param.packageName) || modulePath == null) return;
+        if (installed || modulePath == null) return;
+
+        installed = true;
         try {
             final AssetManager replacements = (AssetManager) XposedHelpers.newInstance(AssetManager.class);
             int cookie = (Integer) XposedHelpers.callMethod(replacements, "addAssetPath", modulePath);
