@@ -8,3 +8,9 @@
 # Ignore files in the "build" directory
 /build/
 
+# Runtime diagnostics
+/service.log*
+/diagnostics.txt
+__pycache__/
+/.signing/
+
