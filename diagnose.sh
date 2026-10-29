@@ -14,6 +14,13 @@ echo "Font files and labels:"
 ls -lZ "$FONT_FILE" /system/fonts/*Emoji*.ttf 2>/dev/null
 echo "Current font hashes:"
 sha256sum "$FONT_FILE" /system/fonts/NotoColorEmoji.ttf
+echo "Known downloaded Google emoji font (if present):"
+for userdir in /data/user/*; do
+    [ -d "$userdir" ] || continue
+    case "${userdir##*/}" in ''|*[!0-9]*) continue ;; esac
+    target="$userdir/$GOOGLE_EMOJI_FONT"
+    [ -f "$target" ] && sha256sum "$target"
+done
 echo "System font mounts (first 40):"
 awk '$5 == "/system/fonts" || $5 ~ /^\/system\/fonts\/.*[Ee]moji/ {n++; if (n <= 40) print} END {print "Total:", n+0}' /proc/self/mountinfo
 echo "Configured system emoji families:"
@@ -28,6 +35,8 @@ ps -A -o PID,NAME 2>/dev/null | while read -r pid name; do
     case "$name" in
         system_server|*zygote*|com.android.systemui|com.google.android.inputmethod.latin|\
         com.samsung.android.honeyboard|com.sec.android.inputmethod|com.brave.browser*|\
+        com.android.chrome*|com.chrome.beta*|com.chrome.dev*|com.chrome.canary*|\
+        com.google.android.googlequicksearchbox*|com.google.android.webview*|webview_zygote|\
         org.mozilla.*|com.supercell.clashofclans|com.discord)
             printf '\nProcess %s (%s)\n' "$name" "$pid"
             readlink "/proc/$pid/ns/mnt"
@@ -42,7 +51,8 @@ done
 
 if [ -x /data/adb/ksu/bin/ksud ]; then
     echo "Keyboard, browser, and game profiles (if supported by this ksud):"
-    for app in '$' $KEYBOARD_APPS com.brave.browser com.supercell.clashofclans com.discord; do
+    for app in '$' $KEYBOARD_APPS com.brave.browser com.android.chrome \
+        com.google.android.googlequicksearchbox com.supercell.clashofclans com.discord; do
         /data/adb/ksu/bin/ksud profile get "$app" 2>/dev/null
     done
 fi

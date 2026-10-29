@@ -25,11 +25,19 @@ if [ ! -s "$FONT_FILE" ]; then
     exit 1
 fi
 
+case "${1:-}" in
+    --manual) ;;
+    *) wait_for_app_storage ;;
+esac
+
 # The mount backend handles the primary system font. Do not scan /data aliases:
 # they can refer to the same files through shared mounts and stack bindings.
 result=0
 mount_oem_fonts || result=1
 mount_app_fonts || result=1
+if [ "${1:-}" != --manual ]; then
+    restart_google_font_apps || result=1
+fi
 if [ "$result" = 0 ]; then
     log "Service completed; app visibility remains controlled by the root manager"
 else

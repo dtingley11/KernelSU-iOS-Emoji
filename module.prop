@@ -1,7 +1,7 @@
 id=iOS_Emoji_KSU
 name=iOS 26.4 Emoji font
-version=v4.2
-versionCode=430
+version=v4.2.3
+versionCode=433
 author=dtingley11
-description=iOS 26.4 emoji fonts for KernelSU, with system font aliases, keyboard refresh, and diagnostics.
+description=iOS emojis for KernelSU/overlayfs based mounting
 minMagisk=20200

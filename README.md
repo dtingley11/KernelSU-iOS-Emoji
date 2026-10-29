@@ -24,15 +24,16 @@ For Discord, install the add-on APK, enable **iOS Emoji for Discord** in LSPosed
 
 - Apps using Android's system emoji font must be able to see the replacement mount. KernelSU app profiles and hiding tools can remove module mounts from an app. This module does not change those settings.
 - Apps with their own fonts, emoji images, or rendering engines can retain their own emoji designs.
+- Chrome and pages inside the Google app can prefer an emoji font downloaded by Google Play services. v4.2.1 also replaces the known downloaded font when present. If it downloads after boot, run Action and reopen the affected browser.
 - The Discord add-on supports bundled Unicode PNG emoji. It was verified with Discord **350.8 - Stable** on a OnePlus Ace 6T running Android 16. Custom server emoji and stickers are unchanged; unsupported image names retain Discord's original images.
 - **Clash of Clans side-chat emoji are not supported by this release.** Clash is not included in the Discord add-on's scope.
 - Device, ROM, root-backend, and app-version differences can affect compatibility.
 
 ## Keyboard Refresh
 
-Use the module's **Action** button to refresh existing font targets, restart installed Gboard and Samsung keyboards for user 0, and write a diagnostic report. Open a text field afterward to reload the keyboard.
+Use the module's **Action** button to refresh existing font targets, stop supported apps, clear their caches where Android supports cache-only clearing, and write a diagnostic report. Supported apps include Gboard and Samsung keyboards, Chrome variants, Brave, Firefox variants, the Google app, and the supported Facebook/Messenger packages, for user 0. Reopen affected apps afterward; opening a text field reloads the keyboard.
 
-The Action does not delete keyboard settings, learned words, browser profiles, or caches. Boot scripts do not scan all app data, disable Google services, or automatically force-stop apps.
+The Action preserves keyboard settings, learned words, browser profiles, accounts, and app data. On Android versions without an explicitly supported cache-only command, it skips cache clearing and still stops the apps. The screen shows a short completion message; details are saved in the private `action.log` and `diagnostics.txt`. The boot service waits a bounded time for encrypted user-0 app storage, then stops already-running Chrome variants, Brave, or Google only if their downloaded emoji font was newly bound. Boot scripts do not clear caches or disable Google services.
 
 ## Diagnostics
 
@@ -52,6 +53,24 @@ If a device freezes shortly after boot, disable the module using the root manage
 Earlier versions changed GMS component states and Messenger directory permissions. This release does not make those changes or automatically overwrite their current values, since the original values were not recorded.
 
 ## Changelog
+
+### v4.2.3
+
+- Fixed Android commands failing when Action output was saved in the private module log.
+- Added a bounded wait for encrypted app storage before refreshing app font targets after boot.
+- Reloaded already-running affected browsers after a new Google emoji font bind, while keeping cache clearing manual.
+
+### v4.2.2
+
+- Expanded the manual Action to stop supported browsers and the Google app so they reload emoji fonts.
+- Added guarded cache-only clearing for supported apps, preserving app data and compatibility with older Android versions.
+- Simplified the completion message and moved refresh details into a private action log.
+
+### v4.2.1
+
+- Added the known Google Play services emoji font target used by Chrome and Google in-app pages.
+- Added downloaded-font hashes and Chrome, Google, and WebView renderer coverage to diagnostics.
+- Kept the existing bounded refresh and mount deduplication without deleting font caches or changing Google services.
 
 ### v4.2
 
