@@ -8,6 +8,7 @@
 #include "dobby.h"
 #include "core.h"
 #include "font_redirect.h"
+#include "library_maps.h"
 
 #if !defined(CLASH_FONT_UID) || !defined(CLASH_FONT_BYTES) || !defined(CLASH_APK_BYTES)
 #error Build with the verified Clash UID and audited payload lengths
@@ -16,20 +17,40 @@
 namespace {
 constexpr const char* tag = "ClashFontZygisk";
 constexpr const char* module_root = "/data/adb/modules/ios_emoji_clash_zygisk_font";
-clash_font::FontRedirect redirect;
+clash_font::FontRedirect redirects[clash_font::max_providers];
 jobject assets_owner = nullptr;
 std::atomic<unsigned> served{0}, fallback{0};
 
+template<std::size_t Provider>
 AAsset* open_asset(AAssetManager* manager, const char* path, int mode) {
     clash_font::Outcome outcome;
-    AAsset* result = redirect.open(manager, path, mode, outcome);
+    AAsset* result = redirects[Provider].open(manager, path, mode, outcome);
     if (outcome == clash_font::Outcome::Served && served.fetch_add(1) < 8) {
-        __android_log_print(ANDROID_LOG_INFO, tag, "FONT_SERVED bytes=%lld mode=%d",
-            static_cast<long long>(redirect.expected_size), mode);
+        __android_log_print(ANDROID_LOG_INFO, tag, "FONT_SERVED bytes=%lld mode=%d provider=%zu",
+            static_cast<long long>(redirects[Provider].expected_size), mode, Provider);
     } else if (outcome == clash_font::Outcome::Fallback && fallback.fetch_add(1) < 8) {
         __android_log_print(ANDROID_LOG_WARN, tag, "FONT_FALLBACK original asset retained");
     }
     return result;
+}
+
+bool find_asset_targets(clash_font::AssetTargets& targets) {
+    FILE* file = std::fopen("/proc/self/maps", "re");
+    if (!file) return false;
+    clash_font::LibraryMap maps[32]{};
+    std::size_t count = 0;
+    char line[1024];
+    bool valid = true;
+    while (std::fgets(line, sizeof(line), file)) {
+        clash_font::LibraryMap map{};
+        if (!clash_font::parse_library_map(line, map)) continue;
+        if (count == sizeof(maps) / sizeof(maps[0])) { valid = false; break; }
+        maps[count++] = map;
+    }
+    valid = valid && !std::ferror(file);
+    std::fclose(file);
+    return valid && clash_font::select_asset_targets(maps, count,
+        reinterpret_cast<uintptr_t>(AAssetManager_open), targets);
 }
 
 // No client-supplied paths, commands, mount operations, or profile changes.
@@ -126,8 +147,10 @@ bool prepare_assets(JNIEnv* env, int fd) {
                                             if (correct) {
                                                 assets_owner = env->NewGlobalRef(manager);
                                                 if (jni_ok(env, "retain") && assets_owner) {
-                                                    redirect.replacements = native;
-                                                    redirect.expected_size = CLASH_FONT_BYTES;
+                                                    for (auto& redirect : redirects) {
+                                                        redirect.replacements = native;
+                                                        redirect.expected_size = CLASH_FONT_BYTES;
+                                                    }
                                                     success = true;
                                                 }
                                             }
@@ -218,15 +241,31 @@ public:
             api_->setOption(zygisk::Option::DLCLOSE_MODULE_LIBRARY);
             return;
         }
-        // Keep this library resident once a hook installation is attempted,
-        // including partial hook failures. Never unload a possible callback.
-        int result = DobbyHook(reinterpret_cast<void*>(AAssetManager_open),
-            reinterpret_cast<void*>(open_asset), reinterpret_cast<void**>(&redirect.original));
-        if (result != 0 || !redirect.original) {
-            __android_log_print(ANDROID_LOG_ERROR, tag, "HOOK_FAILED status=%d", result);
+        clash_font::AssetTargets targets;
+        if (!find_asset_targets(targets)) {
+            __android_log_print(ANDROID_LOG_WARN, tag, "PREPARE_FAILED stage=provider-maps");
+            if (assets_owner) env_->DeleteGlobalRef(assets_owner);
+            assets_owner = nullptr;
+            api_->setOption(zygisk::Option::DLCLOSE_MODULE_LIBRARY);
             return;
         }
-        __android_log_print(ANDROID_LOG_INFO, tag, "HOOK_READY exact-font-only one-shot");
+        __android_log_print(ANDROID_LOG_INFO, tag, "PROVIDERS_FOUND count=%zu", targets.count);
+        constexpr clash_font::AssetOpen callbacks[] = {
+            open_asset<0>, open_asset<1>, open_asset<2>, open_asset<3>
+        };
+        static_assert(sizeof(callbacks) / sizeof(callbacks[0]) == clash_font::max_providers);
+        // Keep this library resident once a hook installation is attempted,
+        // including partial hook failures. Never unload a possible callback.
+        for (std::size_t i = 0; i < targets.count; ++i) {
+            int result = DobbyHook(reinterpret_cast<void*>(targets.addresses[i]),
+                reinterpret_cast<void*>(callbacks[i]), reinterpret_cast<void**>(&redirects[i].original));
+            if (result != 0 || !redirects[i].original) {
+                __android_log_print(ANDROID_LOG_ERROR, tag, "HOOK_FAILED provider=%zu status=%d", i, result);
+                return;
+            }
+            __android_log_print(ANDROID_LOG_INFO, tag, "PROVIDER_HOOKED index=%zu", i);
+        }
+        __android_log_print(ANDROID_LOG_INFO, tag, "HOOK_READY providers=%zu exact-font-only one-shot", targets.count);
     }
 
     void preServerSpecialize([[maybe_unused]] zygisk::ServerSpecializeArgs* args) override {

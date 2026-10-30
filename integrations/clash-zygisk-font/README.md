@@ -12,7 +12,11 @@ the production module. The asset carrier is not installed as an Android app.
 
 The inline hook is installed before the game starts, so calls made by a later
 loaded `libg.so` can reach it. This does not use Zygisk's PLT registration after
-specialization. The module remains resident once hook installation is attempted.
+specialization. Build 2 reads its own executable mappings and hooks each copy of
+the exact system asset library matching the linked provider's device/inode and
+symbol file offset (at most four). Each provider has a separate original-function
+pointer. Unknown or ambiguous mappings stop preparation before any hook.
+The module remains resident once hook installation is attempted.
 Non-target processes request normal library unloading and do not contact the
 companion. There are no mounts, game APK edits, app-data writes, SELinux changes,
 root-profile changes, Java/Xposed hooks, or protection-check modifications.
@@ -45,7 +49,7 @@ build/python/bin/python tools/build_clash_zygisk_font.py --uid 10474
 build/python/bin/python -m unittest discover -s tests
 ```
 
-Output: `build/diagnostics/Clash-Zygisk-Font-Redirect-1.zip`.
+Output: `build/diagnostics/Clash-Zygisk-Font-Redirect-2.zip`.
 The builder uses a clean Git archive of an Android-compatible Dobby revision and
 statically links the library without patching it. It does not enable its symbol resolver, linker utilities,
 obfuscation, examples, or tests. Metadata records pinned revisions and hashes.
@@ -61,9 +65,17 @@ control first if still enabled; the installer refuses overlapping controls and
 does not disable them itself. Leave Clash outside LSPosed scope.
 
 Start a live `ClashFontZygisk` tag capture before the first cold launch. Expected
-stages are `TARGET_SELECTED`, `HOOK_READY`, and `FONT_SERVED`. `HOOK_FAILED` or
+stages are `TARGET_SELECTED`, `PROVIDERS_FOUND`, `PROVIDER_HOOKED`, `HOOK_READY`,
+and `FONT_SERVED`. `HOOK_FAILED` or
 `PREPARE_FAILED` is not a successful replacement. Missing retained log records do
 not establish non-execution. Logs contain stage/size information, not chat text.
+
+The first build was tested on the OnePlus. An armed launch reached `HOOK_READY`
+and mapped the font carrier, but emitted no `FONT_SERVED` while the user viewed
+stock emoji in Clan Chat. Read-only inspection found two copies of libandroid:
+the original copy's asset-open instructions were unchanged, while the copy
+linked by the module contained Dobby's branch. Build 2 addresses this provider
+selection error; its runtime behavior and chat rendering remain unverified.
 
 Verify the font source and sent-message appearance independently. The user has
 confirmed iOS emoji in the input bar but stock emoji after sending; input-field

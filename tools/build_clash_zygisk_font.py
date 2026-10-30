@@ -22,7 +22,7 @@ API_SHA = "fc6523882c0f8659b4fcd1e04ffb07d3a948090e5a8c08817af6e2b506a078d0"
 DOBBY = ROOT / "build/dependencies/dobby"
 DOBBY_REV = "b0176de574104726bb68dff3b77ee666300fc338"
 FONT = ROOT / "system/fonts/NotoColorEmoji.ttf"
-OUTPUT = ROOT / "build/diagnostics/Clash-Zygisk-Font-Redirect-1.zip"
+OUTPUT = ROOT / "build/diagnostics/Clash-Zygisk-Font-Redirect-2.zip"
 
 
 def run(*args, **kwargs):

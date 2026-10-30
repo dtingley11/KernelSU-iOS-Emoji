@@ -23,6 +23,10 @@ class ClashZygiskFontTest(unittest.TestCase):
     def test_exact_asset_routing_and_fallback(self):
         self.compile_and_run("routing_test.cpp", SOURCE / "font_redirect.cpp")
 
+    @unittest.skipUnless(shutil.which("c++"), "Host C++ compiler required")
+    def test_duplicate_library_provider_selection(self):
+        self.compile_and_run("library_maps_test.cpp")
+
     def compile_and_run(self, fixture, *sources):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "test"
