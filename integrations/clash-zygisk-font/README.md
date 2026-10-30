@@ -1,7 +1,8 @@
 # Clash Zygisk Font TEST
 
 Private prototype on `test/clash-zygisk-font`. Build 3 narrows library loading;
-its phone behavior is unverified. The user confirmed build 2 works on the OnePlus
+its scope was verified on the OnePlus and the user confirmed the earlier Duck
+warning is absent. The user confirmed build 2 works on the OnePlus
 on 2026-10-29, then reported a Duck Detector warning. Uses native Zygisk and
 a standalone Dobby inline hook, with no LSPosed dependency. It targets only the
 exact main Clash process at the user-0 UID supplied to the builder.
@@ -109,9 +110,19 @@ requested sent-chat emoji replacement. Read-only inspection verified installed
 version `redirect2` / code 2. No retained tag logs were available for that
 successful launch; do not describe `FONT_SERVED` as independently captured.
 
-Build 3 has not been installed by the builder. Its deferred Android-loader path
-needs a fresh device trial. A loader or memory-file denial fails normally before
-font hooking; no permissions or SELinux rules are changed to work around it.
+On 2026-10-29, read-only checks verified installed build 3 and all three payload
+hashes against the host build. Clash had the resident helper, a full-size font
+mapping, and an active asset-open branch; its mapped carrier SHA-256 matched
+`288e32a5fb13558a2a782bd1edad276c4a7886c134ba11a2f2eacd2ccd708738`.
+The small entry was absent from Clash. Duck had neither the helper nor entry,
+and its asset-open instructions retained the original system bytes. No retained
+`FONT_SERVED` log was available. The user then explicitly confirmed the earlier
+Duck finding was absent and requested no further rescans. This records that
+specific result, not a claim that every detector category is clear. No module
+re-arm, game restart, installation, or reboot was performed during these checks.
+
+A loader or memory-file denial fails normally before font hooking; no
+permissions or SELinux rules are changed to work around it.
 
 Verify the font source and sent-message appearance independently in further
 trials. Before build 2, the user saw iOS emoji in the input bar but stock emoji
