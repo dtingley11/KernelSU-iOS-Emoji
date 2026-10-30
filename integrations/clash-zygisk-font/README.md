@@ -1,6 +1,7 @@
 # Clash Zygisk Font TEST
 
-Private, unverified prototype on `test/clash-zygisk-font`. Uses native Zygisk and
+Private prototype on `test/clash-zygisk-font`. The user confirmed build 2 works
+on the OnePlus on 2026-10-29. Uses native Zygisk and
 a standalone Dobby inline hook, with no LSPosed dependency. It targets only the
 exact main Clash process at the user-0 UID supplied to the builder.
 
@@ -75,12 +76,17 @@ and mapped the font carrier, but emitted no `FONT_SERVED` while the user viewed
 stock emoji in Clan Chat. Read-only inspection found two copies of libandroid:
 the original copy's asset-open instructions were unchanged, while the copy
 linked by the module contained Dobby's branch. Build 2 addresses this provider
-selection error; its runtime behavior and chat rendering remain unverified.
+selection error. On 2026-10-29 the user reported that it worked, confirming the
+requested sent-chat emoji replacement. Read-only inspection verified installed
+version `redirect2` / code 2. No retained tag logs were available for that
+successful launch; do not describe `FONT_SERVED` as independently captured.
 
-Verify the font source and sent-message appearance independently. The user has
-confirmed iOS emoji in the input bar but stock emoji after sending; input-field
-appearance is not acceptance. The bundled font load is established, but its use
-for sent-message glyphs is still unproven. Historical Samsung behavior is an
+Verify the font source and sent-message appearance independently in further
+trials. Before build 2, the user saw iOS emoji in the input bar but stock emoji
+after sending; input-field appearance alone is not acceptance. Build 2 has one
+user-confirmed successful trial. Repeated launches, reboot behavior, and other
+devices/runtime versions have not been validated. The one-shot marker is still
+consumed per attempt; a later cold launch needs explicit re-arming. Historical Samsung behavior is an
 uncaptured, possibly older reference, not proof about this game version.
 
 This adds a detectable runtime hook. Passing the earlier observe-only control
