@@ -11,12 +11,17 @@ struct ServerSpecializeArgs {};
 struct Api {
     unsigned unloads = 0, connections = 0;
     bool armed = false, bad_hook_header = false;
+    uint64_t configured_uid = 10474;
     void setOption(Option option) { assert(option == DLCLOSE_MODULE_LIBRARY); ++unloads; }
     int connectCompanion() {
         ++connections;
         int sockets[2];
         assert(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets) == 0);
-        clash_font::Header headers[] = {{clash_font::magic, armed ? 4ULL : 0ULL},
+        clash_font::Header headers[] = {
+#ifdef INTEGRATED_ENTRY
+            {clash_font::magic, configured_uid},
+#endif
+            {clash_font::magic, armed ? 4ULL : 0ULL},
             {clash_font::magic, armed && !bad_hook_header ? 4ULL : 0ULL}};
         assert(write(sockets[0], headers, sizeof(headers)) == sizeof(headers));
         if (armed) assert(write(sockets[0], "fonthook", 8) == 8);

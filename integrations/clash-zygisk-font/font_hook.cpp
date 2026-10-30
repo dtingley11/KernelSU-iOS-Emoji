@@ -10,7 +10,7 @@
 #include "font_redirect.h"
 #include "library_maps.h"
 
-#if !defined(CLASH_FONT_UID) || !defined(CLASH_FONT_BYTES)
+#if !defined(CLASH_FONT_BYTES)
 #error Build with the verified Clash UID and audited payload lengths
 #endif
 
@@ -149,8 +149,8 @@ bool prepare_assets(JNIEnv* env, int fd) {
 } // namespace
 
 extern "C" __attribute__((visibility("default")))
-bool clash_font_start(JNIEnv* env, int font_fd, uint32_t abi) {
-    if (abi != clash_font::hook_abi || getuid() != CLASH_FONT_UID) {
+bool clash_font_start(JNIEnv* env, int font_fd, uint32_t abi, uint32_t expected_uid) {
+    if (abi != clash_font::hook_abi || expected_uid < 10000 || expected_uid >= 20000 || getuid() != expected_uid) {
         close(font_fd);
         return false;
     }
@@ -181,6 +181,6 @@ bool clash_font_start(JNIEnv* env, int font_fd, uint32_t abi) {
         }
         __android_log_print(ANDROID_LOG_INFO, tag, "PROVIDER_HOOKED index=%zu", i);
     }
-    __android_log_print(ANDROID_LOG_INFO, tag, "HOOK_READY providers=%zu exact-font-only one-shot", targets.count);
+    __android_log_print(ANDROID_LOG_INFO, tag, "HOOK_READY providers=%zu exact-font-only", targets.count);
     return true;
 }

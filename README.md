@@ -2,6 +2,13 @@
 
 Systemlessly replaces Android's system emoji font with iOS 26.4 emoji. The module ships one font at `system/fonts/NotoColorEmoji.ttf` and uses relative links for supported OEM, legacy, and flag font filenames.
 
+## Prerelease
+
+The `v4.3.0-pre1` ZIP includes optional Clash support, off by default. Use volume
+buttons during installation or the Action menu to enable/disable it, then reboot.
+See [prerelease setup and compatibility](docs/clash-prerelease.md). Discord stays
+separate. The downloads below describe the published stable release.
+
 ## Downloads
 
 Starting with [v4.2](https://github.com/dtingley11/KernelSU-iOS-Emoji/releases/tag/v4.2) now includes two independently installable assets:
@@ -26,7 +33,7 @@ For Discord, install the add-on APK, enable **iOS Emoji for Discord** in LSPosed
 - Apps with their own fonts, emoji images, or rendering engines can retain their own emoji designs.
 - Chrome and pages inside the Google app can prefer an emoji font downloaded by Google Play services. v4.2.1 also replaces the known downloaded font when present. If it downloads after boot, run Action and reopen the affected browser.
 - The Discord add-on supports bundled Unicode PNG emoji. It was verified with Discord **350.8 - Stable** on a OnePlus Ace 6T running Android 16. Custom server emoji and stickers are unchanged; unsupported image names retain Discord's original images.
-- **Clash of Clans side-chat emoji are not supported by this release.** Clash is not included in the Discord add-on's scope.
+- The stable release does not support Clash side-chat emoji. This prerelease adds optional native Clash support for the tested ARM64/Android 16/ReZygisk 552 setup; see the prerelease instructions. Clash is not included in the Discord add-on's scope.
 - Device, ROM, root-backend, and app-version differences can affect compatibility.
 
 ## Keyboard Refresh
@@ -53,6 +60,11 @@ If a device freezes shortly after boot, disable the module using the root manage
 Earlier versions changed GMS component states and Messenger directory permissions. This release does not make those changes or automatically overwrite their current values, since the original values were not recorded.
 
 ## Changelog
+
+### v4.3.0-pre1
+
+- Added optional Clash emoji support with install-time volume controls and Action settings.
+- Kept Clash off by default and Discord separate.
 
 ### v4.2.3
 

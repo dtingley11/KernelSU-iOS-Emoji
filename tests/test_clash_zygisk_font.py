@@ -31,6 +31,14 @@ class ClashZygiskFontTest(unittest.TestCase):
     def test_entry_loads_helper_only_in_armed_clash(self):
         self.compile_and_run("entry_test.cpp")
 
+    @unittest.skipUnless(shutil.which("c++"), "Host C++ compiler required")
+    def test_persistent_entry_rechecks_uid_and_repeated_launches(self):
+        self.compile_and_run("entry_test.cpp", flags=("-DINTEGRATED_ENTRY",))
+
+    @unittest.skipUnless(shutil.which("c++"), "Host C++ compiler required")
+    def test_persistent_configuration_validation(self):
+        self.compile_and_run("persistent_test.cpp")
+
     def test_entry_elf_audit_rejects_initializers_and_dependencies(self):
         report = "Shared library: [libc.so]\nShared library: [libdl.so]\nzygisk_module_entry\nzygisk_companion_entry"
         BUILDER.audit_entry_elf(report)
@@ -40,10 +48,11 @@ class ClashZygiskFontTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 BUILDER.audit_entry_elf(report + "\n" + extra)
 
-    def compile_and_run(self, fixture, *sources):
+    def compile_and_run(self, fixture, *sources, flags=()):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "test"
             subprocess.run(["c++", "-std=c++17", "-pthread", "-Wall", "-Wextra", "-Werror",
+                            *flags,
                             "-I", str(SOURCE), "-I", str(FIXTURES / "include"),
                             str(FIXTURES / fixture), *map(str, sources), "-o", str(output)], check=True)
             subprocess.run([str(output)], check=True, timeout=10)

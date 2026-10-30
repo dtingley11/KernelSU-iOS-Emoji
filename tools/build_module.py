@@ -1,6 +1,8 @@
 """Build a root-layout, uncompressed module archive."""
 
 from pathlib import Path
+from hashlib import sha256
+import importlib.util
 import zipfile
 
 
@@ -15,8 +17,10 @@ FILES = (
     "post-fs-data.sh",
     "service.sh",
     "action.sh",
+    "clash.sh",
     "diagnose.sh",
     "README.md",
+    "docs/clash-prerelease.md",
     "system/fonts/NotoColorEmoji.ttf",
 )
 
@@ -37,6 +41,12 @@ def build():
     for name in FILES:
         if not (ROOT / name).is_file():
             raise FileNotFoundError(name)
+    spec = importlib.util.spec_from_file_location("clash_native_builder", ROOT / "tools/build_clash_zygisk_font.py")
+    native = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(native)
+    payloads = native.build(integrated=True)
+    checksums = "".join(f"{sha256(path.read_bytes()).hexdigest()}  {name}\n"
+                        for name, path in payloads.items() if name.endswith((".so", ".apk")))
     output = ROOT / "build" / f"KernelSU-iOS-Emoji-{version}.zip"
     output.parent.mkdir(exist_ok=True)
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_STORED) as archive:
@@ -47,6 +57,9 @@ def build():
                 archive.write(font, name)
             else:
                 archive.write(ROOT / name, name)
+        for name, path in payloads.items():
+            archive.write(path, name)
+        archive.writestr("clash/payload.sha256", checksums)
     with zipfile.ZipFile(output) as archive:
         if archive.testzip() is not None:
             raise ValueError("Archive CRC validation failed")

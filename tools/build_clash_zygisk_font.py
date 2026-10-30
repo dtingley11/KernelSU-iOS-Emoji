@@ -59,22 +59,24 @@ def audit_entry_elf(report):
         raise ValueError("Missing Zygisk entry points")
 
 
-def build(uid):
-    validate_uid(uid)
+def build(uid=None, integrated=False):
+    if not integrated:
+        validate_uid(uid)
+    stage = ROOT / "build/prerelease-clash" if integrated else STAGE
     if sha256(API.read_bytes()).hexdigest() != API_SHA:
         raise ValueError("Official Zygisk API v4 header changed")
     revision = run("git", "-C", DOBBY, "rev-parse", "HEAD", capture_output=True, text=True).stdout.strip()
     if revision != DOBBY_REV:
         raise ValueError("Dobby dependency does not match the pinned revision")
-    STAGE.mkdir(parents=True, exist_ok=True)
-    dobby_source = STAGE / f"dobby-source-{DOBBY_REV[:12]}"
+    stage.mkdir(parents=True, exist_ok=True)
+    dobby_source = stage / f"dobby-source-{DOBBY_REV[:12]}"
     if not dobby_source.exists():
         with tempfile.TemporaryFile() as snapshot:
             run("git", "-C", DOBBY, "archive", DOBBY_REV, stdout=snapshot)
             snapshot.seek(0)
             with tarfile.open(fileobj=snapshot) as archive:
                 archive.extractall(dobby_source, filter="data")
-    dobby_build = STAGE / f"dobby-android-{DOBBY_REV[:12]}"
+    dobby_build = stage / f"dobby-android-{DOBBY_REV[:12]}"
     run("cmake", "-S", dobby_source, "-B", dobby_build, "-G", "Ninja",
         f"-DCMAKE_TOOLCHAIN_FILE={NDK / 'build/cmake/android.toolchain.cmake'}",
         "-DANDROID_ABI=arm64-v8a", "-DANDROID_PLATFORM=android-30", "-DANDROID_STL=c++_static",
@@ -84,29 +86,31 @@ def build(uid):
         "-DDOBBY_BUILD_TEST=OFF", "-DDOBBY_BUILD_EXAMPLE=OFF")
     run("cmake", "--build", dobby_build, "--target", "dobby_static", "-j", "4")
 
-    assets = STAGE / "assets"
+    assets = stage / "assets"
     assets.mkdir(exist_ok=True)
     shutil.copyfile(FONT, assets / "replacement.ttf")
-    manifest = STAGE / "AndroidManifest.xml"
+    manifest = stage / "AndroidManifest.xml"
     manifest.write_text('<manifest xmlns:android="http://schemas.android.com/apk/res/android" '
                         'package="io.github.dtingley11.clashfontassets" android:versionCode="1" '
                         'android:versionName="1"><uses-sdk android:minSdkVersion="30" '
                         'android:targetSdkVersion="36"/><application android:hasCode="false"/></manifest>\n')
-    carrier = STAGE / "font-assets.apk"
+    carrier = stage / "font-assets.apk"
     run(TOOLS / "aapt2", "link", "-I", SDK / "platforms/android-36/android.jar",
-        "--manifest", manifest, "-A", assets, "-0", "ttf", "-o", STAGE / "assets-unaligned.apk")
-    run(TOOLS / "zipalign", "-P", "16", "-f", "4", STAGE / "assets-unaligned.apk", carrier)
+        "--manifest", manifest, "-A", assets, "-0", "ttf", "-o", stage / "assets-unaligned.apk")
+    run(TOOLS / "zipalign", "-P", "16", "-f", "4", stage / "assets-unaligned.apk", carrier)
     audit_carrier(carrier, FONT)
     if carrier.stat().st_size > 64 * 1024 * 1024:
         raise ValueError("Font carrier exceeds runtime payload limit")
 
     compiler = NDK / "toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android30-clang++"
-    library = STAGE / "arm64-v8a.so"
-    hook = STAGE / "font-hook.so"
+    library = stage / "arm64-v8a.so"
+    hook = stage / "font-hook.so"
     common = ["-std=c++17", "-O2", "-shared", "-fPIC", "-fvisibility=hidden",
         "-fno-exceptions", "-fno-rtti", "-fno-threadsafe-statics",
         "-Wall", "-Wextra", "-Werror", "-Wl,-z,max-page-size=16384", "-Wl,-z,relro,-z,now",
-        "-Wl,--no-undefined", "-Wl,--exclude-libs,ALL", f"-DCLASH_FONT_UID={uid}"]
+        "-Wl,--no-undefined", "-Wl,--exclude-libs,ALL"]
+    if not integrated:
+        common.append(f"-DCLASH_FONT_UID={uid}")
     run(compiler, *common, "-static-libstdc++", f"-DCLASH_FONT_BYTES={FONT.stat().st_size}LL",
         "-I", dobby_source / "include", SOURCE / "font_hook.cpp", SOURCE / "font_redirect.cpp",
         dobby_build / "libdobby.a", "-landroid", "-llog", "-ldl", "-o", hook)
@@ -117,7 +121,7 @@ def build(uid):
     run(compiler, *common, "-nostdlib++", "-nostartfiles", "-ffunction-sections", "-fdata-sections", "-Wl,--gc-sections",
         f"-DCLASH_APK_BYTES={carrier.stat().st_size}ULL",
         f"-DCLASH_HOOK_BYTES={hook.stat().st_size}ULL", "-I", API.parent,
-        SOURCE / "module.cpp", "-llog", "-ldl", "-o", library)
+        SOURCE / ("integrated.cpp" if integrated else "module.cpp"), "-llog", "-ldl", "-o", library)
     readelf = NDK / "toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf"
     for native in (library, hook):
         elf = run(readelf, "--wide", "-l", "-d", "--symbols", native, capture_output=True, text=True).stdout
@@ -128,6 +132,19 @@ def build(uid):
         for line in elf.splitlines():
             if line.strip().startswith("LOAD") and int(line.split()[-1], 16) < 16384:
                 raise ValueError("Native library is not aligned for 16 KB pages")
+    if integrated:
+        metadata = {"mode": "persistent-opt-in", "android_sdk": 36, "rezygisk_build": 552,
+                    "zygisk_api": 4, "api_sha256": API_SHA, "dobby_revision": DOBBY_REV,
+                    "font_sha256": sha256(FONT.read_bytes()).hexdigest(),
+                    "font_bytes": FONT.stat().st_size, "uid": "validated at installation and launch"}
+        metadata_path = stage / "build.json"
+        metadata_path.write_text(json.dumps(metadata, indent=2) + "\n")
+        api_license = stage / "LICENSE.zygisk.txt"
+        api_license.write_text(API.read_text().split("#pragma once", 1)[0])
+        return {"clash/entry.so": library, "clash/font-hook.so": hook, "clash/font-assets.apk": carrier,
+                "clash/build.json": metadata_path, "clash/LICENSE.zygisk.txt": api_license,
+                "clash/LICENSE.dobby.txt": dobby_source / "LICENSE"}
+
     installer = (SOURCE / "customize.sh").read_text().replace("@CLASH_UID@", str(uid))
     installer = installer.replace("@PAYLOAD_SHA@", sha256(carrier.read_bytes()).hexdigest())
     installer = installer.replace("@HOOK_SHA@", sha256(hook.read_bytes()).hexdigest())

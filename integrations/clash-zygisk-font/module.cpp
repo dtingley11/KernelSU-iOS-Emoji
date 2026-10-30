@@ -126,7 +126,7 @@ public:
             return;
         }
         __android_log_print(ANDROID_LOG_INFO, tag, "HELPER_LOADED entry-unloads-after-callback");
-        start(env_, font, clash_font::hook_abi); // Helper takes ownership of font.
+        start(env_, font, clash_font::hook_abi, CLASH_FONT_UID); // Helper takes ownership of font.
     }
 
     void preServerSpecialize([[maybe_unused]] zygisk::ServerSpecializeArgs* args) override {

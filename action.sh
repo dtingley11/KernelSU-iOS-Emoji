@@ -14,6 +14,13 @@ if ! mkdir "$ACTION_LOCK" 2>/dev/null; then
 fi
 trap 'rmdir "$ACTION_LOCK"' EXIT
 
+if [ -f "$MODDIR/clash.sh" ]; then
+    . "$MODDIR/clash.sh"
+    clash_action_menu
+    menu_result=$?
+    [ "$menu_result" = 2 ] || exit "$menu_result"
+fi
+
 umask 077
 ACTION_LOG="$MODDIR/action.log"
 if ! : > "$ACTION_LOG" || ! chmod 600 "$ACTION_LOG"; then

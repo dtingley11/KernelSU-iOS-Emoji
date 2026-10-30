@@ -1,5 +1,10 @@
 # Clash Zygisk Font TEST
 
+The combined persistent prerelease is maintained on `prerelease/clash-integrated`.
+See [its setup and build instructions](../../docs/clash-prerelease.md). It uses
+`integrated.cpp` and an explicit enabled UID, while the standalone diagnostic
+entry below retains its one-shot behavior. Discord remains separate.
+
 Private prototype on `test/clash-zygisk-font`. Build 3 narrows library loading;
 its scope was verified on the OnePlus and the user confirmed the earlier Duck
 warning is absent. The user confirmed build 2 works on the OnePlus

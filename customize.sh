@@ -10,3 +10,8 @@ if ! prepare_font_aliases; then
 fi
 set_perm_recursive "$MODPATH" 0 0 0755 0644
 ui_print "- Font aliases will be applied by the mount backend after reboot"
+
+if [ -f "$MODDIR/clash.sh" ]; then
+    . "$MODDIR/clash.sh"
+    clash_install_choice
+fi
