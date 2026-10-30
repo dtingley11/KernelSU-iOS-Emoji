@@ -4,7 +4,7 @@ Systemlessly replaces Android's system emoji font with iOS 26.4 emoji. The modul
 
 ## Downloads
 
-The [v4.2 release](https://github.com/dtingley11/KernelSU-iOS-Emoji/releases/tag/v4.2) includes two independently installable assets:
+Starting with [v4.2](https://github.com/dtingley11/KernelSU-iOS-Emoji/releases/tag/v4.2) now includes two independently installable assets:
 
 - **KernelSU-iOS-Emoji-v4.2.zip**: the system emoji module. Install through your KernelSU manager.
 - **iOS-Emoji-Discord-v4.2.apk**: the optional Discord image-emoji add-on. Install as an Android application and enable it in LSPosed for Discord only.
