@@ -1,6 +1,6 @@
 id=ios_emoji_clash_zygisk_font
 name=Clash iOS Emoji Zygisk TEST
-version=redirect2
-versionCode=2
+version=redirect3
+versionCode=3
 author=dtingley11
 description=TEST: one-shot native replacement of Clash's bundled emoji font.

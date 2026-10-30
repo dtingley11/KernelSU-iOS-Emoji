@@ -16,6 +16,8 @@ if [ -d /data/adb/modules/ios_emoji_clash_ns_control ] && \
 fi
 hash=$(sha256sum "$MODPATH/font-assets.apk" | cut -d ' ' -f 1)
 [ "$hash" = @PAYLOAD_SHA@ ] || abort "! Font payload checksum mismatch"
+hook_hash=$(sha256sum "$MODPATH/font-hook.so" | cut -d ' ' -f 1)
+[ "$hook_hash" = @HOOK_SHA@ ] || abort "! Font helper checksum mismatch"
 set_perm_recursive "$MODPATH" 0 0 0755 0644
 umask 077
 : > "$MODPATH/armed"

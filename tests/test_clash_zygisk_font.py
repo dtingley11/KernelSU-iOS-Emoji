@@ -27,6 +27,19 @@ class ClashZygiskFontTest(unittest.TestCase):
     def test_duplicate_library_provider_selection(self):
         self.compile_and_run("library_maps_test.cpp")
 
+    @unittest.skipUnless(shutil.which("c++"), "Host C++ compiler required")
+    def test_entry_loads_helper_only_in_armed_clash(self):
+        self.compile_and_run("entry_test.cpp")
+
+    def test_entry_elf_audit_rejects_initializers_and_dependencies(self):
+        report = "Shared library: [libc.so]\nShared library: [libdl.so]\nzygisk_module_entry\nzygisk_companion_entry"
+        BUILDER.audit_entry_elf(report)
+        for extra in ("Shared library: [libandroid.so]", "Shared library: [libc++_shared.so]",
+                      "__cxa_atexit", "__cxa_finalize", "INIT_ARRAY", "FINI_ARRAY",
+                      "_GLOBAL__sub_I_RoutingPlugin.cc", "DobbyHook", "AAssetManager_open"):
+            with self.assertRaises(ValueError):
+                BUILDER.audit_entry_elf(report + "\n" + extra)
+
     def compile_and_run(self, fixture, *sources):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "test"
@@ -66,7 +79,7 @@ class ClashZygiskFontTest(unittest.TestCase):
 
     def test_installer_shell_syntax(self):
         installer = (SOURCE / "customize.sh").read_text()
-        installer = installer.replace("@CLASH_UID@", "10474").replace("@PAYLOAD_SHA@", "0" * 64)
+        installer = installer.replace("@CLASH_UID@", "10474").replace("@PAYLOAD_SHA@", "0" * 64).replace("@HOOK_SHA@", "0" * 64)
         self.assertNotIn("@", installer)
         subprocess.run(["sh", "-n"], input=installer, text=True, check=True)
 

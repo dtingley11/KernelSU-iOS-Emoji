@@ -4,6 +4,7 @@ import argparse
 from hashlib import sha256
 import json
 import os
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -22,7 +23,7 @@ API_SHA = "fc6523882c0f8659b4fcd1e04ffb07d3a948090e5a8c08817af6e2b506a078d0"
 DOBBY = ROOT / "build/dependencies/dobby"
 DOBBY_REV = "b0176de574104726bb68dff3b77ee666300fc338"
 FONT = ROOT / "system/fonts/NotoColorEmoji.ttf"
-OUTPUT = ROOT / "build/diagnostics/Clash-Zygisk-Font-Redirect-2.zip"
+OUTPUT = ROOT / "build/diagnostics/Clash-Zygisk-Font-Redirect-3.zip"
 
 
 def run(*args, **kwargs):
@@ -44,6 +45,18 @@ def audit_carrier(path, font):
             raise ValueError("Font must be stored for file-descriptor access")
         if archive.read("assets/replacement.ttf") != Path(font).read_bytes():
             raise ValueError("Carrier font differs from the module's existing font")
+
+
+def audit_entry_elf(report):
+    dependencies = set(re.findall(r"Shared library: \[([^\]]+)\]", report))
+    if not dependencies or dependencies - {"libc.so", "libdl.so", "liblog.so", "libm.so"}:
+        raise ValueError("Unexpected minimal-entry dependency")
+    for forbidden in ("__cxa_atexit", "__cxa_thread_atexit", "__cxa_finalize", "_GLOBAL__sub_I",
+                      "INIT_ARRAY", "FINI_ARRAY", "Dobby", "AAsset", "_Znwm"):
+        if forbidden in report:
+            raise ValueError(f"Minimal entry contains runtime initialization: {forbidden}")
+    if "zygisk_module_entry" not in report or "zygisk_companion_entry" not in report:
+        raise ValueError("Missing Zygisk entry points")
 
 
 def build(uid):
@@ -89,31 +102,46 @@ def build(uid):
 
     compiler = NDK / "toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android30-clang++"
     library = STAGE / "arm64-v8a.so"
-    run(compiler, "-std=c++17", "-O2", "-shared", "-fPIC", "-fvisibility=hidden",
-        "-fno-exceptions", "-fno-rtti", "-fno-threadsafe-statics", "-static-libstdc++",
+    hook = STAGE / "font-hook.so"
+    common = ["-std=c++17", "-O2", "-shared", "-fPIC", "-fvisibility=hidden",
+        "-fno-exceptions", "-fno-rtti", "-fno-threadsafe-statics",
         "-Wall", "-Wextra", "-Werror", "-Wl,-z,max-page-size=16384", "-Wl,-z,relro,-z,now",
-        "-Wl,--no-undefined", "-Wl,--exclude-libs,ALL", f"-DCLASH_FONT_UID={uid}",
-        f"-DCLASH_FONT_BYTES={FONT.stat().st_size}LL", f"-DCLASH_APK_BYTES={carrier.stat().st_size}ULL",
-        "-I", API.parent, "-I", dobby_source / "include", SOURCE / "module.cpp",
-        SOURCE / "font_redirect.cpp", dobby_build / "libdobby.a", "-landroid", "-llog", "-ldl", "-o", library)
+        "-Wl,--no-undefined", "-Wl,--exclude-libs,ALL", f"-DCLASH_FONT_UID={uid}"]
+    run(compiler, *common, "-static-libstdc++", f"-DCLASH_FONT_BYTES={FONT.stat().st_size}LL",
+        "-I", dobby_source / "include", SOURCE / "font_hook.cpp", SOURCE / "font_redirect.cpp",
+        dobby_build / "libdobby.a", "-landroid", "-llog", "-ldl", "-o", hook)
+    if hook.stat().st_size + carrier.stat().st_size > 64 * 1024 * 1024:
+        raise ValueError("Combined payload exceeds runtime limit")
+    # The entry has only trivial static data and explicit Zygisk initialization.
+    # No CRT constructors/destructors or C++ runtime are needed in other apps.
+    run(compiler, *common, "-nostdlib++", "-nostartfiles", "-ffunction-sections", "-fdata-sections", "-Wl,--gc-sections",
+        f"-DCLASH_APK_BYTES={carrier.stat().st_size}ULL",
+        f"-DCLASH_HOOK_BYTES={hook.stat().st_size}ULL", "-I", API.parent,
+        SOURCE / "module.cpp", "-llog", "-ldl", "-o", library)
     readelf = NDK / "toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-readelf"
-    elf = run(readelf, "-l", "-d", "--dyn-syms", library, capture_output=True, text=True).stdout
-    if "libc++_shared.so" in elf or "zygisk_module_entry" not in elf or "zygisk_companion_entry" not in elf:
-        raise ValueError("Unexpected native library dependencies or entry points")
-    for line in elf.splitlines():
-        if line.strip().startswith("LOAD") and int(line.split()[-1], 16) < 16384:
-            raise ValueError("Native library is not aligned for 16 KB pages")
+    for native in (library, hook):
+        elf = run(readelf, "--wide", "-l", "-d", "--symbols", native, capture_output=True, text=True).stdout
+        if native == library:
+            audit_entry_elf(elf)
+        elif "clash_font_start" not in elf or "libc++_shared.so" in elf or "zygisk_module_entry" in elf:
+            raise ValueError("Unexpected helper entry points or dependencies")
+        for line in elf.splitlines():
+            if line.strip().startswith("LOAD") and int(line.split()[-1], 16) < 16384:
+                raise ValueError("Native library is not aligned for 16 KB pages")
     installer = (SOURCE / "customize.sh").read_text().replace("@CLASH_UID@", str(uid))
     installer = installer.replace("@PAYLOAD_SHA@", sha256(carrier.read_bytes()).hexdigest())
+    installer = installer.replace("@HOOK_SHA@", sha256(hook.read_bytes()).hexdigest())
     if "@" in installer:
         raise ValueError("Unresolved installer template")
     run("sh", "-n", input=installer, text=True)
-    metadata = {"mode": "native-exact-font-redirect-one-shot", "target_package": "com.supercell.clashofclans",
+    metadata = {"mode": "deferred-helper-exact-font-redirect-one-shot", "target_package": "com.supercell.clashofclans",
                 "target_uid": uid, "android_sdk": 36, "rezygisk_build": 552, "zygisk_api": 4,
                 "api_sha256": API_SHA, "dobby_revision": DOBBY_REV,
                 "font_sha256": sha256(FONT.read_bytes()).hexdigest(), "font_bytes": FONT.stat().st_size,
                 "carrier_sha256": sha256(carrier.read_bytes()).hexdigest(),
                 "library_sha256": sha256(library.read_bytes()).hexdigest(),
+                "hook_sha256": sha256(hook.read_bytes()).hexdigest(),
+                "entry_scope": "Minimal entry unloads in every process; helper loads only in selected Clash.",
                 "notice": "Private prototype; not deployed or verified in Clash."}
     with zipfile.ZipFile(OUTPUT, "w", compression=zipfile.ZIP_STORED) as archive:
         for name in ("module.prop", "README.md"):
@@ -125,9 +153,10 @@ def build(uid):
         archive.write(dobby_source / "LICENSE", "LICENSE.dobby.txt")
         archive.write(carrier, "font-assets.apk")
         archive.write(library, "zygisk/arm64-v8a.so")
+        archive.write(hook, "font-hook.so")
     with zipfile.ZipFile(OUTPUT) as archive:
         expected_entries = {"module.prop", "README.md", "customize.sh", "skip_mount", "prototype.json",
-                            "LICENSE.zygisk.txt", "LICENSE.dobby.txt", "font-assets.apk", "zygisk/arm64-v8a.so"}
+                            "LICENSE.zygisk.txt", "LICENSE.dobby.txt", "font-assets.apk", "font-hook.so", "zygisk/arm64-v8a.so"}
         if set(archive.namelist()) != expected_entries or archive.testzip() is not None:
             raise ValueError("Unexpected prototype ZIP layout")
         if any(item.compress_type != zipfile.ZIP_STORED for item in archive.infolist()):

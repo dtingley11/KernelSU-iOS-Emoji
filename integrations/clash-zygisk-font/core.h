@@ -59,10 +59,25 @@ inline bool owned_regular(const struct stat& info, uid_t owner) {
     return S_ISREG(info.st_mode) && info.st_uid == owner && !(info.st_mode & 0022);
 }
 
+// Callers supply compile-time module filenames, never socket request data.
+inline int open_owned_payload(int directory, const char* name, uint64_t expected, uid_t owner = 0) {
+    struct stat dir{}, payload{};
+    if (expected == 0 || expected > max_payload || fstat(directory, &dir) != 0 ||
+        !S_ISDIR(dir.st_mode) || dir.st_uid != owner || (dir.st_mode & 0022)) return -1;
+    int fd = openat(directory, name, O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK);
+    if (fd < 0) return -1;
+    if (fstat(fd, &payload) != 0 || !owned_regular(payload, owner) || payload.st_size <= 0 ||
+        static_cast<uint64_t>(payload.st_size) != expected) {
+        close(fd);
+        return -1;
+    }
+    return fd;
+}
+
 // The root handler uses owner=0. The parameter lets host tests use their own UID.
 // This is an internal helper, not a socket request or arbitrary-path root API.
 inline int take_payload(int directory, uint64_t expected, uid_t owner = 0) {
-    struct stat dir{}, arm{}, payload{};
+    struct stat dir{}, arm{};
     if (expected == 0 || expected > max_payload || fstat(directory, &dir) != 0 ||
         !S_ISDIR(dir.st_mode) || dir.st_uid != owner || (dir.st_mode & 0022)) return -1;
     int armed = openat(directory, "armed", O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK);
@@ -71,13 +86,6 @@ inline int take_payload(int directory, uint64_t expected, uid_t owner = 0) {
     close(armed);
     if (!valid || unlinkat(directory, "armed", 0) != 0) return -1;
     // Consumption precedes payload loading: a failed attempt is not retried.
-    int fd = openat(directory, "font-assets.apk", O_RDONLY | O_CLOEXEC | O_NOFOLLOW | O_NONBLOCK);
-    if (fd < 0) return -1;
-    if (fstat(fd, &payload) != 0 || !owned_regular(payload, owner) || payload.st_size <= 0 ||
-        static_cast<uint64_t>(payload.st_size) != expected) {
-        close(fd);
-        return -1;
-    }
-    return fd;
+    return open_owned_payload(directory, "font-assets.apk", expected, owner);
 }
 }
