@@ -12,8 +12,9 @@ available.
 
 Action waits three seconds for volume input. Volume up or no input performs the
 existing emoji refresh, including guarded cache-only clearing and diagnostics.
-Volume down opens Clash settings; then volume up toggles Clash, while volume
-down or no input cancels. Settings changes do not clear caches, stop apps, or
+Volume down opens "turn on/off Clash emojis (Zygisk needed)"; then volume up
+turns Clash emojis on or off, while volume down or no input cancels.
+The installer uses the same wording. Settings changes do not clear caches, stop apps, or
 restart the phone. Reboot to apply an enable/disable change completely.
 
 When enabled, Clash support runs on every main-process launch. It no longer

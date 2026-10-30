@@ -56,7 +56,7 @@ clash_enable() {
         chmod 600 "$MODDIR/clash/enabled.new" &&
         mv -f "$MODDIR/zygisk/arm64-v8a.so.new" "$MODDIR/zygisk/arm64-v8a.so" &&
         mv -f "$MODDIR/clash/enabled.new" "$MODDIR/clash/enabled" || return 1
-    echo "Clash enabled. Reboot to apply."
+    echo "Clash emojis enabled. Reboot to apply."
 }
 
 clash_disable() {
@@ -64,13 +64,13 @@ clash_disable() {
     rm -f "$MODDIR/clash/enabled" "$MODDIR/clash/enabled.new" \
         "$MODDIR/zygisk/arm64-v8a.so" "$MODDIR/zygisk/arm64-v8a.so.new" || return 1
     rmdir "$MODDIR/zygisk" 2>/dev/null || :
-    echo "Clash disabled. Reboot to apply."
+    echo "Clash emojis disabled. Reboot to apply."
 }
 
 clash_change_allowed() {
     if [ "$MODDIR" = "$CLASH_MODULES_ROOT/iOS_Emoji_KSU" ] &&
         [ -d "${CLASH_MODULES_ROOT%/*}/modules_update/iOS_Emoji_KSU" ]; then
-        echo "Reboot to finish the pending module update, then change Clash settings."
+        echo "Reboot to finish the pending module update, then change Clash emoji settings."
         return 1
     fi
 }
@@ -78,36 +78,37 @@ clash_change_allowed() {
 clash_install_choice() {
     local choice previous=off
     if ! clash_supported; then
-        ui_print "- Clash support is off; system emoji will work normally"
+        ui_print "- Clash emojis are off (Zygisk needed); system emoji will work normally"
         return 0
     fi
     [ ! -f "$CLASH_MODULES_ROOT/iOS_Emoji_KSU/clash/enabled" ] || previous=on
-    ui_print "- Optional Clash support (default: $previous)"
-    ui_print "- Press volume up to enable or volume down to disable within 6 seconds"
+    ui_print "- Clash emojis (Zygisk needed). Default: $previous."
+    ui_print "- Volume up: turn on Clash emojis. Volume down: turn off Clash emojis."
+    ui_print "- Choose within 6 seconds."
     choice=$(volume_choice 6)
     case "$choice" in
-        up) clash_enable || ui_print "- Clash remains off; use Action to review setup" ;;
+        up) clash_enable || ui_print "- Clash emojis remain off; use Action to review setup" ;;
         down) clash_disable ;;
         *) if [ "$previous" = on ]; then
-               clash_enable || ui_print "- Clash remains off; use Action to review setup"
+               clash_enable || ui_print "- Clash emojis remain off; use Action to review setup"
            fi ;;
     esac
     return 0
 }
 
 clash_action_menu() {
-    local choice label=Enable
-    echo "Volume up: refresh emoji. Volume down: Clash settings."
+    local choice label="Turn on"
+    echo "Volume up: refresh emoji. Volume down: turn on/off Clash emojis (Zygisk needed)."
     echo "Waiting 3 seconds; default is refresh."
     choice=$(volume_choice 3)
     [ "$choice" = down ] || return 2
-    [ ! -f "$MODDIR/clash/enabled" ] || label=Disable
-    echo "Volume up: $label Clash. Volume down: cancel."
+    [ ! -f "$MODDIR/clash/enabled" ] || label="Turn off"
+    echo "Volume up: $label Clash emojis (Zygisk needed). Volume down: cancel."
     echo "Waiting 5 seconds; default is cancel."
     choice=$(volume_choice 5)
     if [ "$choice" != up ]; then
         echo "Cancelled."
         return 0
     fi
-    if [ "$label" = Enable ]; then clash_enable; else clash_disable; fi
+    if [ "$label" = "Turn on" ]; then clash_enable; else clash_disable; fi
 }
