@@ -25,8 +25,7 @@ For Discord, install the add-on APK, enable **iOS Emoji for Discord** in LSPosed
 - Apps using Android's system emoji font must be able to see the replacement mount. KernelSU app profiles and hiding tools can remove module mounts from an app. This module does not change those settings.
 - Apps with their own fonts, emoji images, or rendering engines can retain their own emoji designs.
 - Chrome and pages inside the Google app can prefer an emoji font downloaded by Google Play services. v4.2.1 also replaces the known downloaded font when present. If it downloads after boot, run Action and reopen the affected browser.
-- The Discord add-on supports bundled Unicode PNG emoji. It was verified with Discord **350.8 - Stable** on a OnePlus Ace 6T running Android 16. Custom server emoji and stickers are unchanged; unsupported image names retain Discord's original images.
-- **Clash of Clans side-chat emoji are not supported by this release.** Clash is not included in the Discord add-on's scope.
+- The Discord add-on supports bundled Unicode PNG emoji. It was tested with Discord **350.8 - Stable** on a OnePlus Ace 6T running Android 16. Custom server emoji and stickers are unchanged; unsupported image names retain Discord's original images.
 - Device, ROM, root-backend, and app-version differences can affect compatibility.
 
 ## Keyboard Refresh
