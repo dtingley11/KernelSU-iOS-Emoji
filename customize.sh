@@ -8,6 +8,9 @@ fi
 if ! prepare_font_aliases; then
     abort "! Could not prepare emoji font aliases"
 fi
+if ! prepare_system_emoji_config; then
+    abort "! Could not prepare system emoji configuration"
+fi
 set_perm_recursive "$MODPATH" 0 0 0755 0644
 ui_print "- Font aliases will be applied by the mount backend after reboot"
 

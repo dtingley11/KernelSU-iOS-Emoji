@@ -94,6 +94,35 @@ prepare_font_aliases() {
     return 0
 }
 
+rewrite_emoji_font_config() {
+    # Android resolves downloaded font updates by the configured PostScript key.
+    # Use a distinct file/key for our selected font; its internal names stay intact.
+    sed -E -e 's#(^|[>[:space:]])NotoColorEmoji[.]ttf([<[:space:]]|$)#\1iOSColorEmoji.ttf\2#g' \
+        -e 's/postScriptName[[:space:]]*=[[:space:]]*"NotoColorEmoji"/postScriptName="iOSColorEmoji"/g' \
+        -e "s/postScriptName[[:space:]]*=[[:space:]]*'NotoColorEmoji'/postScriptName='iOSColorEmoji'/g"
+}
+
+prepare_system_emoji_config() {
+    # Prepare module overlays only. Leave verified /data/fonts files untouched.
+    local system_root="${1:-/system}" name source destination prepared=0
+    for name in fonts.xml font_fallback.xml; do
+        source="$system_root/etc/$name"
+        [ -f "$source" ] || continue
+        grep -Eq '(^|[>[:space:]])(NotoColorEmoji|iOSColorEmoji)[.]ttf([<[:space:]]|$)' "$source" || continue
+        destination="$MODDIR/system/etc/$name"
+        mkdir -p "$MODDIR/system/etc" || return 1
+        rewrite_emoji_font_config < "$source" > "$destination.new" || return 1
+        [ -s "$destination.new" ] && grep -Fq 'iOSColorEmoji.ttf' "$destination.new" || return 1
+        mv -f "$destination.new" "$destination" || return 1
+        prepared=1
+        log "Prepared system emoji configuration: $name"
+    done
+    if [ "$prepared" = 1 ]; then
+        ln -sf NotoColorEmoji.ttf "$MODDIR/system/fonts/iOSColorEmoji.ttf" || return 1
+    fi
+    return 0
+}
+
 mount_app_fonts() {
     local userdir app target result=0
     for userdir in /data/user/*; do

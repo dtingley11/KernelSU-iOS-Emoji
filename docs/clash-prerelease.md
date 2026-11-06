@@ -4,6 +4,11 @@ This prerelease combines the system font and optional native Clash support in
 one KernelSU ZIP. Discord remains a separate LSPosed APK. The module description
 stays `iOS emojis for KernelSU/overlayfs based mounting`.
 
+The installer prepares the device's system emoji configuration to select the
+module font even when Android has downloaded a newer emoji font. Downloaded
+font files and their verification remain intact. This takes effect after reboot.
+Reinstall after a ROM update if its font configuration changes.
+
 Clash is off on first installation. Press volume up within six seconds during
 installation to enable it, or volume down to leave it off. A normal manager
 update preserves an enabled choice unless support is unavailable. System emoji

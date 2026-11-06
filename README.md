@@ -4,7 +4,7 @@ Systemlessly replaces Android's system emoji font with iOS 26.4 emoji. The modul
 
 ## Prerelease
 
-The `v4.3.0-pre1` ZIP includes optional Clash support, off by default. Use volume
+The `v4.3.0-pre2` ZIP includes optional Clash support, off by default. Use volume
 buttons during installation or the Action menu to enable/disable it, then reboot.
 See [prerelease setup and compatibility](docs/clash-prerelease.md). Discord stays
 separate. The downloads below describe the published stable release.
@@ -60,6 +60,11 @@ If a device freezes shortly after boot, disable the module using the root manage
 Earlier versions changed GMS component states and Messenger directory permissions. This release does not make those changes or automatically overwrite their current values, since the original values were not recorded.
 
 ## Changelog
+
+### v4.3.0-pre2
+
+- Selects the module font when Android installs a downloaded emoji font update.
+- Preserves downloaded font files and their verification.
 
 ### v4.3.0-pre1
 
