@@ -97,7 +97,7 @@ prepare_font_aliases() {
 rewrite_emoji_font_config() {
     # Android resolves downloaded font updates by the configured PostScript key.
     # Keep the standard filename for apps whose profiles remove module mounts.
-    # Its configured key is distinct; the font's internal names stay intact.
+    # The configured key matches the module font's distinct PostScript name.
     sed -E -e ':all' -e '$!{N; b all;}' \
         -e 's#(<font([[:space:]][^>]*)?)[[:space:]]+postScriptName[[:space:]]*=[[:space:]]*"[^"]*"([^>]*>[[:space:]]*NotoColorEmoji[.]ttf[[:space:]]*</font>)#\1\3#g' \
         -e "s#(<font([[:space:]][^>]*)?)[[:space:]]+postScriptName[[:space:]]*=[[:space:]]*'[^']*'([^>]*>[[:space:]]*NotoColorEmoji[.]ttf[[:space:]]*</font>)#\1\3#g" \

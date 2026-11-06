@@ -34,6 +34,7 @@ def check(path=None):
         assert font_bytes == (ROOT / "system/fonts/NotoColorEmoji.ttf").read_bytes()
         font = TTFont(BytesIO(font_bytes))
         assert font["name"].getDebugName(1) == "Noto Color Emoji"
+        assert font["name"].getDebugName(6) == "iOSColorEmoji"
         metadata = json.loads(archive.read("clash/build.json"))
         assert metadata["mode"] == "persistent-opt-in"
         assert metadata["font_sha256"] == sha256(font_bytes).hexdigest()
