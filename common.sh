@@ -94,6 +94,36 @@ prepare_font_aliases() {
     return 0
 }
 
+rewrite_emoji_font_config() {
+    # Android resolves downloaded font updates by the configured PostScript key.
+    # Keep the standard filename for apps whose profiles remove module mounts.
+    # The configured key matches the module font's distinct PostScript name.
+    sed -E -e ':all' -e '$!{N; b all;}' \
+        -e 's#(<font([[:space:]][^>]*)?)[[:space:]]+postScriptName[[:space:]]*=[[:space:]]*"[^"]*"([^>]*>[[:space:]]*NotoColorEmoji[.]ttf[[:space:]]*</font>)#\1\3#g' \
+        -e "s#(<font([[:space:]][^>]*)?)[[:space:]]+postScriptName[[:space:]]*=[[:space:]]*'[^']*'([^>]*>[[:space:]]*NotoColorEmoji[.]ttf[[:space:]]*</font>)#\1\3#g" \
+        -e 's#<font([[:space:]][^>]*)?>([[:space:]]*NotoColorEmoji[.]ttf[[:space:]]*)</font>#<font\1 postScriptName="iOSColorEmoji">\2</font>#g'
+}
+
+prepare_system_emoji_config() {
+    # Prepare module overlays only. Leave verified /data/fonts files untouched.
+    local system_root="${1:-/system}" extension_root="${2:-/system_ext}" name source destination
+    for name in etc/fonts.xml etc/font_fallback.xml system_ext/etc/fonts_base.xml system_ext/etc/fonts_ule.xml; do
+        case "$name" in
+            system_ext/*) source="$extension_root/${name#system_ext/}" ;;
+            *) source="$system_root/$name" ;;
+        esac
+        [ -f "$source" ] || continue
+        grep -Eq '(^|[>[:space:]])NotoColorEmoji[.]ttf([<[:space:]]|$)' "$source" || continue
+        destination="$MODDIR/system/$name"
+        mkdir -p "${destination%/*}" || return 1
+        rewrite_emoji_font_config < "$source" > "$destination.new" || return 1
+        [ -s "$destination.new" ] && grep -Fq 'postScriptName="iOSColorEmoji"' "$destination.new" || return 1
+        mv -f "$destination.new" "$destination" || return 1
+        log "Prepared system emoji configuration: $name"
+    done
+    return 0
+}
+
 mount_app_fonts() {
     local userdir app target result=0
     for userdir in /data/user/*; do

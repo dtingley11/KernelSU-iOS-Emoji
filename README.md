@@ -18,6 +18,8 @@ The KernelSU module works without Xposed. Discord's bundled PNG emoji require th
 3. Reboot to apply the system font and its aliases.
 4. Restart affected apps so they can reload their fonts.
 
+Reinstall the module if a ROM update changes the system font configuration.
+
 For Discord, install the add-on APK, enable **iOS Emoji for Discord** in LSPosed, select **Discord (`com.discord`)** as its scope, and force-stop and reopen Discord. The add-on has no launcher screen; manage it through LSPosed. If Android rejects an APK update because of a signing mismatch, uninstall the existing add-on, install this APK, and enable it again in LSPosed.
 
 ## Compatibility
@@ -52,6 +54,10 @@ If a device freezes shortly after boot, disable the module using the root manage
 Earlier versions changed GMS component states and Messenger directory permissions. This release does not make those changes or automatically overwrite their current values, since the original values were not recorded.
 
 ## Changelog
+
+### v4.2.4
+
+- Fixed emoji reverting after Android font updates and in Chrome and Brave.
 
 ### v4.2.3
 

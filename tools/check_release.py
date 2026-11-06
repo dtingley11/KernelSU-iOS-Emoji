@@ -38,7 +38,7 @@ def check():
         for record in font["name"].names:
             check_wording(f"font name {record.nameID}", record.toUnicode())
         assert font["name"].getDebugName(1) == "Noto Color Emoji"
-        assert font["name"].getDebugName(6) == "NotoColorEmoji"
+        assert font["name"].getDebugName(6) == "iOSColorEmoji"
     with zipfile.ZipFile(addon) as archive:
         assert archive.testzip() is None
         coverage = json.loads(archive.read("assets/coverage.json"))

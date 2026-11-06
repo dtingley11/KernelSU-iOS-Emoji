@@ -14,6 +14,10 @@ echo "Font files and labels:"
 ls -lZ "$FONT_FILE" /system/fonts/*Emoji*.ttf 2>/dev/null
 echo "Current font hashes:"
 sha256sum "$FONT_FILE" /system/fonts/NotoColorEmoji.ttf
+echo "Android-updated emoji fonts (if present):"
+for font in /data/fonts/files/*/NotoColorEmoji.ttf; do
+    [ -f "$font" ] && sha256sum "$font"
+done
 echo "Known downloaded Google emoji font (if present):"
 for userdir in /data/user/*; do
     [ -d "$userdir" ] || continue
