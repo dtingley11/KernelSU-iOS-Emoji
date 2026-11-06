@@ -82,6 +82,24 @@ class SystemFontConfigTest(unittest.TestCase):
             self.assertFalse((stage / "module/system/fonts/iOSColorEmoji.ttf").exists())
             self.assertEqual((stage / "stock/etc/fonts.xml").read_text(), text)
 
+    def test_oneplus_configs_use_standard_system_ext_module_layout(self):
+        with tempfile.TemporaryDirectory() as directory:
+            stage = Path(directory)
+            (stage / "system_ext/etc").mkdir(parents=True)
+            (stage / "module/system/fonts").mkdir(parents=True)
+            xml = '<familyset><family lang="und-Zsye"><font weight="400">NotoColorEmoji.ttf</font></family></familyset>'
+            for name in ("fonts_base.xml", "fonts_ule.xml"):
+                (stage / "system_ext/etc" / name).write_text(xml)
+            env = dict(os.environ, REPO=str(ROOT), MODDIR=str(stage / "module"),
+                       STOCK=str(stage / "missing-system"), EXTENSION=str(stage / "system_ext"))
+            subprocess.run(["sh", "-c", '. "$REPO/common.sh"; prepare_system_emoji_config "$STOCK" "$EXTENSION"'],
+                           env=env, check=True, capture_output=True)
+            for name in ("fonts_base.xml", "fonts_ule.xml"):
+                self.assertEqual((stage / "system_ext/etc" / name).read_text(), xml)
+                font = ET.parse(stage / "module/system/system_ext/etc" / name).find("./family/font")
+                self.assertEqual(font.text, "NotoColorEmoji.ttf")
+                self.assertEqual(font.get("postScriptName"), "iOSColorEmoji")
+
 
 if __name__ == "__main__":
     unittest.main()
