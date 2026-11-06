@@ -96,30 +96,28 @@ prepare_font_aliases() {
 
 rewrite_emoji_font_config() {
     # Android resolves downloaded font updates by the configured PostScript key.
-    # Use a distinct file/key for our selected font; its internal names stay intact.
-    sed -E -e 's#(^|[>[:space:]])NotoColorEmoji[.]ttf([<[:space:]]|$)#\1iOSColorEmoji.ttf\2#g' \
-        -e 's/postScriptName[[:space:]]*=[[:space:]]*"NotoColorEmoji"/postScriptName="iOSColorEmoji"/g' \
-        -e "s/postScriptName[[:space:]]*=[[:space:]]*'NotoColorEmoji'/postScriptName='iOSColorEmoji'/g"
+    # Keep the standard filename for apps whose profiles remove module mounts.
+    # Its configured key is distinct; the font's internal names stay intact.
+    sed -E -e ':all' -e '$!{N; b all;}' \
+        -e 's#(<font([[:space:]][^>]*)?)[[:space:]]+postScriptName[[:space:]]*=[[:space:]]*"[^"]*"([^>]*>[[:space:]]*NotoColorEmoji[.]ttf[[:space:]]*</font>)#\1\3#g' \
+        -e "s#(<font([[:space:]][^>]*)?)[[:space:]]+postScriptName[[:space:]]*=[[:space:]]*'[^']*'([^>]*>[[:space:]]*NotoColorEmoji[.]ttf[[:space:]]*</font>)#\1\3#g" \
+        -e 's#<font([[:space:]][^>]*)?>([[:space:]]*NotoColorEmoji[.]ttf[[:space:]]*)</font>#<font\1 postScriptName="iOSColorEmoji">\2</font>#g'
 }
 
 prepare_system_emoji_config() {
     # Prepare module overlays only. Leave verified /data/fonts files untouched.
-    local system_root="${1:-/system}" name source destination prepared=0
+    local system_root="${1:-/system}" name source destination
     for name in fonts.xml font_fallback.xml; do
         source="$system_root/etc/$name"
         [ -f "$source" ] || continue
-        grep -Eq '(^|[>[:space:]])(NotoColorEmoji|iOSColorEmoji)[.]ttf([<[:space:]]|$)' "$source" || continue
+        grep -Eq '(^|[>[:space:]])NotoColorEmoji[.]ttf([<[:space:]]|$)' "$source" || continue
         destination="$MODDIR/system/etc/$name"
         mkdir -p "$MODDIR/system/etc" || return 1
         rewrite_emoji_font_config < "$source" > "$destination.new" || return 1
-        [ -s "$destination.new" ] && grep -Fq 'iOSColorEmoji.ttf' "$destination.new" || return 1
+        [ -s "$destination.new" ] && grep -Fq 'postScriptName="iOSColorEmoji"' "$destination.new" || return 1
         mv -f "$destination.new" "$destination" || return 1
-        prepared=1
         log "Prepared system emoji configuration: $name"
     done
-    if [ "$prepared" = 1 ]; then
-        ln -sf NotoColorEmoji.ttf "$MODDIR/system/fonts/iOSColorEmoji.ttf" || return 1
-    fi
     return 0
 }
 

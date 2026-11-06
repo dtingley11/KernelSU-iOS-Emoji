@@ -14,7 +14,7 @@ class SystemFontConfigTest(unittest.TestCase):
                               input=value, text=True, env=dict(os.environ, REPO=str(ROOT)),
                               check=True, capture_output=True).stdout
 
-    def test_changes_only_main_emoji_filename_and_its_explicit_lookup_key(self):
+    def test_changes_only_main_emoji_lookup_key_and_keeps_standard_filename(self):
         before = '''<familyset version="23">
           <family name="sans-serif"><font weight="400">Roboto-Regular.ttf</font></family>
           <family lang="und-Zsye" variant="elegant">
@@ -27,21 +27,20 @@ class SystemFontConfigTest(unittest.TestCase):
         </familyset>'''
         expected = ET.fromstring(before)
         emoji = expected.find("./family[@lang='und-Zsye']/font")
-        emoji.text = "iOSColorEmoji.ttf"
         emoji.set("postScriptName", "iOSColorEmoji")
         self.assertEqual(ET.tostring(ET.fromstring(self.rewrite(before))), ET.tostring(expected))
 
     def test_multiline_text_and_single_quoted_explicit_key(self):
         before = "<familyset><family><font postScriptName = 'NotoColorEmoji'>\nNotoColorEmoji.ttf\n</font></family></familyset>"
         font = ET.fromstring(self.rewrite(before)).find("./family/font")
-        self.assertEqual(font.text.strip(), "iOSColorEmoji.ttf")
+        self.assertEqual(font.text.strip(), "NotoColorEmoji.ttf")
         self.assertEqual(font.get("postScriptName"), "iOSColorEmoji")
 
     def test_existing_alias_is_idempotent(self):
-        value = '<familyset><family><font>iOSColorEmoji.ttf</font></family></familyset>'
+        value = '<familyset><family><font postScriptName="iOSColorEmoji">NotoColorEmoji.ttf</font></family></familyset>'
         self.assertEqual(self.rewrite(self.rewrite(value)), value)
 
-    def test_preparation_preserves_stock_files_and_links_the_existing_font(self):
+    def test_preparation_preserves_stock_files_and_uses_existing_filename(self):
         with tempfile.TemporaryDirectory() as directory:
             stage = Path(directory)
             stock = stage / "stock"
@@ -62,11 +61,11 @@ class SystemFontConfigTest(unittest.TestCase):
             for name in ("fonts.xml", "font_fallback.xml"):
                 self.assertEqual((stock / "etc" / name).read_text(), xml)
                 font = ET.parse(module / "system/etc" / name).find("./family/font")
-                self.assertEqual(font.text, "iOSColorEmoji.ttf")
+                self.assertEqual(font.text, "NotoColorEmoji.ttf")
+                self.assertEqual(font.get("postScriptName"), "iOSColorEmoji")
                 self.assertEqual(font.get("weight"), "400")
             alias = module / "system/fonts/iOSColorEmoji.ttf"
-            self.assertEqual(os.readlink(alias), "NotoColorEmoji.ttf")
-            self.assertTrue(os.path.samefile(alias, canonical))
+            self.assertFalse(alias.exists())
             self.assertEqual(canonical.read_bytes(), b"canonical-font-with-preserved-family")
 
     def test_missing_or_unrelated_configuration_leaves_existing_install_usable(self):
